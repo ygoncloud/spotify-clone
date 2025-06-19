@@ -1,0 +1,9 @@
+rules:
+  - id: insecure-express-http
+    pattern: |
+      const app = express();
+      app.listen(80);
+    message: "Avoid using HTTP. Use HTTPS (port 443) for production."
+    severity: WARNING
+    languages: [javascript]
+

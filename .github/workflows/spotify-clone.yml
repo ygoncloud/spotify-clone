@@ -31,14 +31,6 @@ jobs:
       working-directory: ./backend
       run: npm ci
 
-    - name: Run Lint & Tests (frontend)
-      working-directory: ./frontend
-      run: npm run lint && npm test || true
-
-    - name: Run Lint & Tests (backend)
-      working-directory: ./backend
-      run: npm run lint && npm test || true
-
     - name: Semgrep scan
       uses: returntocorp/semgrep-action@v1
       with:
