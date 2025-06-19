@@ -1,0 +1,12 @@
+image:
+  frontend: ghcr.io/ygoncloud/spotify-frontend:latest
+  backend: ghcr.io/ygoncloud/spotify-backend:latest
+
+frontend:
+  port: 3000
+  replicas: 1
+
+backend:
+  port: 5000
+  replicas: 1
+
