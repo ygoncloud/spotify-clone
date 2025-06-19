@@ -1,0 +1,96 @@
+name: DevSecOps Spotify Clone CI/CD
+
+on:
+  push:
+    branches: [main, dev]
+  pull_request:
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    env:
+      REGISTRY: ghcr.io
+      FRONTEND_IMAGE: ghcr.io/ygoncloud/spotify-frontend:latest
+      BACKEND_IMAGE: ghcr.io/ygoncloud/spotify-backend:latest
+      NAMESPACE: spotify-clone
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: 18
+
+    - name: Install frontend deps
+      working-directory: ./frontend
+      run: npm ci
+
+    - name: Install backend deps
+      working-directory: ./backend
+      run: npm ci
+
+    - name: Run Lint & Tests (frontend)
+      working-directory: ./frontend
+      run: npm run lint && npm test || true
+
+    - name: Run Lint & Tests (backend)
+      working-directory: ./backend
+      run: npm run lint && npm test || true
+
+    - name: Semgrep scan
+      uses: returntocorp/semgrep-action@v1
+      with:
+        config: auto
+
+    - name: Dependency Audit (frontend)
+      working-directory: ./frontend
+      run: npm audit --audit-level=high || true
+
+    - name: Dependency Audit (backend)
+      working-directory: ./backend
+      run: npm audit --audit-level=high || true
+
+    - name: Log in to GitHub Container Registry
+      run: echo "${{ secrets.GHCR_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+
+    - name: Build frontend image
+      run: docker build -t $FRONTEND_IMAGE ./frontend
+
+    - name: Build backend image
+      run: docker build -t $BACKEND_IMAGE ./backend
+
+    - name: Trivy scan (frontend)
+      uses: aquasecurity/trivy-action@master
+      with:
+        image-ref: ${{ env.FRONTEND_IMAGE }}
+        format: table
+        exit-code: 0
+
+    - name: Trivy scan (backend)
+      uses: aquasecurity/trivy-action@master
+      with:
+        image-ref: ${{ env.BACKEND_IMAGE }}
+        format: table
+        exit-code: 0
+
+    - name: Push frontend image
+      run: docker push $FRONTEND_IMAGE
+
+    - name: Push backend image
+      run: docker push $BACKEND_IMAGE
+
+    - name: Setup kubectl
+      uses: azure/setup-kubectl@v3
+
+    - name: Configure kubeconfig
+      run: |
+        mkdir -p ~/.kube
+        echo "${{ secrets.KUBECONFIG }}" > ~/.kube/config
+
+    - name: Deploy to Kubernetes
+      run: |
+        kubectl create namespace $NAMESPACE --dry-run=client -o yaml | kubectl apply -f -
+        kubectl apply -f k8s/ --namespace=$NAMESPACE
+
