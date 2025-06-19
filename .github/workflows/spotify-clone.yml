@@ -73,16 +73,10 @@ jobs:
     - name: Push backend image
       run: docker push $BACKEND_IMAGE
 
-    - name: Setup kubectl
-      uses: azure/setup-kubectl@v3
-
-    - name: Configure kubeconfig
+    - name: Render Helm Templates (simulate deployments)
       run: |
-        mkdir -p ~/.kube
-        echo "${{ secrets.KUBECONFIG }}" > ~/.kube/config
-
-    - name: Deploy to Kubernetes
-      run: |
-        kubectl create namespace $NAMESPACE --dry-run=client -o yaml | kubectl apply -f -
-        kubectl apply -f k8s/ --namespace=$NAMESPACE
+        helm template spotify-clone ./k8s/chart/spotify-clone \
+          --set image.frontend=$FRONTEND_IMAGE \
+          --set image.backend=$BACKEND_IMAGE > simulated-deployment.yaml
+        cat simulated-deployment.yaml
 
