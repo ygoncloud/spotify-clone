@@ -59,6 +59,7 @@ jobs:
         image-ref: ${{ env.FRONTEND_IMAGE }}
         format: table
         exit-code: 0
+        skip-cache: true
 
     - name: Trivy scan (backend)
       uses: aquasecurity/trivy-action@master
@@ -66,6 +67,7 @@ jobs:
         image-ref: ${{ env.BACKEND_IMAGE }}
         format: table
         exit-code: 0
+        skip-cache: true
 
     - name: Push frontend image
       run: docker push $FRONTEND_IMAGE
