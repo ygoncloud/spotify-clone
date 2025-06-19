@@ -82,3 +82,8 @@ jobs:
           --set image.backend=$BACKEND_IMAGE > simulated-deployment.yaml
         cat simulated-deployment.yaml
 
+    - name: Save Helm chart to OCI format and push
+      run: |
+        helm package ./k8s/chart/spotify-clone
+        helm registry login ghcr.io -u ${{ github.actor }} -p {{ secrets.GITHUB_TOKEN }}
+        helm push spotify-clone-*.tgz oci://ghcr.io/${{ github.repository_owner }}/helm-charts
