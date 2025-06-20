@@ -86,4 +86,4 @@ jobs:
       run: |
         helm package ./k8s/chart/spotify-clone
         helm registry login ghcr.io -u ${{ github.actor }} -p {{ secrets.GITHUB_TOKEN }}
-        helm push spotify-clone-*.tgz oci://ghcr.io/${{ github.repository_owner }}/helm-charts
+        helm push spotify-clone-*.tgz oci://ghcr.io/ygoncloud/helm-charts
