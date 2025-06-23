@@ -35,6 +35,12 @@ jobs:
       uses: returntocorp/semgrep-action@v1
       with:
         config: auto
+    - name: SonarQube scan
+      uses: SonarSource/sonarqube-scan-action@master
+      env:
+        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+      with:
+        projectBaseDir: ./
 
     - name: Dependency Audit (frontend)
       working-directory: ./frontend
@@ -82,8 +88,34 @@ jobs:
           --set image.backend=$BACKEND_IMAGE > simulated-deployment.yaml
         cat simulated-deployment.yaml
 
-    - name: Save Helm chart to OCI format and push
+    - name: Deploy to Kubernetes
       run: |
-        helm package ./k8s/chart/spotify-clone
-        helm registry login ghcr.io -u ${{ github.actor }} -p {{ secrets.GITHUB_TOKEN }}
-        helm push spotify-clone-*.tgz oci://ghcr.io/ygoncloud/helm-charts
+        kubectl apply -f ./k8s/backend-deployment.yaml
+        kubectl apply -f ./k8s/frontend-deployment.yaml
+        kubectl apply -f ./k8s/ingress.yaml
+
+    - name: Install Monitoring
+      run: |
+        helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+        helm repo add grafana https://grafana.github.io/helm-charts
+        helm repo update
+        helm upgrade --install prometheus prometheus-community/prometheus --namespace monitoring --create-namespace
+        helm upgrade --install grafana grafana/grafana --namespace monitoring --create-namespace \
+          --set adminPassword=${{ secrets.GRAFANA_ADMIN_PASSWORD }}
+
+    - name: Install Falco
+      run: |
+        helm repo add falcosecurity https://falcosecurity.github.io/helm-charts
+        helm repo update
+        helm upgrade --install falco falcosecurity/falco --namespace security --create-namespace
+
+    - name: Install OPA Gatekeeper
+      run:
+        helm repo add gatekeeper https://open-policy-agent.github.io/gatekeeper/charts
+        helm repo update
+        helm upgrade --install gatekeeper gatekeeper/gatekeeper --namespace gatekeeper-system --create-namespace
+        kubectl apply -f ./k8s/security/constraint-templates/disallow-privileged.yaml
+        kubectl apply -f ./k8s/security/constraint/disallow-privileged-pods.yaml
+
+
+
