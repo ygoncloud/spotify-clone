@@ -6,8 +6,8 @@ This project is a full-stack **Spotify Clone** built with Node.js, React, and Mo
 
 ## 🚀 Tech Stack
 
-- **Frontend**: React (Port 3000)
-- **Backend**: Node.js (Port 5000)
+- **Frontend**: React
+- **Backend**: Node.js
 - **Database**: MongoDB Atlas (Cloud)
 - **Container Registry**: GitHub Container Registry (GHCR)
 - **CI/CD**: GitHub Actions
@@ -94,6 +94,14 @@ git push origin main
 ```
 
 GitHub Actions will build, scan, and deploy everything automatically.
+
+
+## ✍️ To deploy this project on your own server:
+
+1. Fork this repo
+2. Replace image names and repo URLs 
+3. Set secrets in GitHub
+4. Deploy to your own K8S cluster with 'kubectl apply' or ArgoCD
 
 ---
 
